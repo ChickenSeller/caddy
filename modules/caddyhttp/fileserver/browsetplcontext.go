@@ -154,6 +154,25 @@ type browseTemplateContext struct {
 	// If ≠0 then Items have been limited to that many elements.
 	Limit int `json:"limit,omitempty"`
 
+	// If pagination is enabled, the following fields are set:
+	// true if pagination is enabled
+	// false if pagination is disabled
+	PaginationEnabled bool `json:"pagination_enabled,omitempty"`
+
+	// The number of items per page.
+	ItemsPerPage int `json:"items_per_page,omitempty"`
+
+	// The current page number.
+	Page int `json:"page,omitempty"`
+
+	// The total number of pages.
+	TotalPages int `json:"total_pages,omitempty"`
+
+	DisplayPageList []int `json:"display_page_list,omitempty"`
+
+	// The total number of items.
+	TotalItems int `json:"total_items,omitempty"`
+
 	// The number of directories in the listing.
 	NumDirs int `json:"num_dirs"`
 
@@ -255,6 +274,35 @@ func (l *browseTemplateContext) applySortAndLimit(sortParam, orderParam, limitPa
 			l.Items = l.Items[:limit]
 			l.Limit = limit
 		}
+	}
+}
+
+func (l *browseTemplateContext) applyPagination(itemsPerPageParam, pageParam string) {
+	itemsPerPageInt, _ := strconv.Atoi(itemsPerPageParam)
+	if itemsPerPageInt <= 0 {
+		itemsPerPageInt = 20
+	}
+	l.ItemsPerPage = itemsPerPageInt
+	l.TotalItems = len(l.Items)
+	l.TotalPages = l.TotalItems / l.ItemsPerPage
+	pageInt, _ := strconv.Atoi(pageParam)
+	if pageInt <= 0 {
+		pageInt = 1
+	}
+	l.Page = pageInt
+	l.PaginationEnabled = true
+	tmpDisplayPageList := make([]int, 0)
+	for i := 1; i <= l.TotalPages; i++ {
+		if i <= 3 || i >= l.TotalPages-2 || i == l.Page-1 || i == l.Page+1 || i == l.Page {
+			tmpDisplayPageList = append(tmpDisplayPageList, i)
+		}
+	}
+	//Add -1 to the page list where the page number is not continuous
+	for i, page := range tmpDisplayPageList {
+		if i > 0 && tmpDisplayPageList[i-1] != page-1 && tmpDisplayPageList[i-1] != -1 {
+			l.DisplayPageList = append(l.DisplayPageList, -1)
+		}
+		l.DisplayPageList = append(l.DisplayPageList, page)
 	}
 }
 

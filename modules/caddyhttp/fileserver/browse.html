@@ -320,7 +320,109 @@ body {
 	background-color: #f3f6f7;
 	min-height: 100vh;
 }
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px;
+    font-family: Arial, sans-serif;
+}
 
+.pagination-total {
+    color: #666;
+    margin-right: 16px;
+    font-size: 14px;
+}
+
+.pagination-btn {
+    min-width: 32px;
+    height: 32px;
+    border: 1px solid #d9d9d9;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: #333;
+    transition: all 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    border-color: #1677ff;
+    font-weight: bold;
+}
+
+.pagination-btn.active {
+    background: #1677ff;
+    border-color: #1677ff;
+    color: white;
+}
+
+.pagination-btn:disabled {
+    cursor: not-allowed;
+    color: #d9d9d9;
+    background: #f5f5f5;
+}
+
+.pagination-ellipsis {
+    color: #666;
+}
+
+.pagination-jumper {
+    margin-left: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #666;
+    font-size: 14px;
+}
+
+.pagination-jumper input {
+    width: 50px;
+    height: 32px;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    padding: 4px 8px;
+    text-align: center;
+}
+
+.pagination-jumper input:focus {
+    outline: none;
+    border-color: #1677ff;
+}
+.pagination-perPage {
+    margin-right: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #666;
+    font-size: 14px;
+}
+
+.pagination-perPage select {
+    appearance: none;
+    background-color: white;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    color: #333;
+    font-size: 14px;
+    padding: 6px 30px 6px 10px;
+    width: 80px;
+    height: 32px;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 16px;
+    cursor: pointer;
+}
+
+.pagination-perPage select:focus {
+    outline: none;
+    border-color: #1677ff;
+}
 img,
 svg {
 	vertical-align: middle;
@@ -829,6 +931,65 @@ footer {
 						Grid
 					</a>
 				</div>
+                {{- if .PaginationEnabled}}
+                <div class="pagination">
+                    <div class="pagination-perPage">
+                        <span>Items per page:</span>
+                        <select class="page-size-select">
+                            <option value="10" {{if eq .ItemsPerPage 10}}selected{{end}}>10</option>
+                            <option value="20" {{if eq .ItemsPerPage 20}}selected{{end}}>20</option>
+                            <option value="50" {{if eq .ItemsPerPage 50}}selected{{end}}>50</option>
+                            <option value="100" {{if eq .ItemsPerPage 100}}selected{{end}}>100</option>
+                        </select>
+                    </div>
+                    <!-- 首页 -->
+                    <button class="pagination-btn" data-page="1">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="16" height="16">
+                            <path fill="#666666" d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160zm352-160l-160 160c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L301.3 256 438.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0z"/>
+                        </svg>
+                    </button>
+
+                    <!-- 上一页 -->
+                    <button class="pagination-btn" data-page="{{if le .Page 1}}1{{else if gt .Page .TotalPages}}{{.TotalPages}}{{else}}{{sub .Page 1}}{{end}}">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="16" height="16">
+                            <path fill="#666666" d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/>
+                        </svg>
+                    </button>
+
+                    {{- range .DisplayPageList }}
+                    {{- if eq . -1 }}
+                    <span class="pagination-ellipsis">...</span>
+                    {{- else }}
+                    {{- if eq . $.Page }}
+                    <button class="pagination-btn active" data-page="{{ . }}">{{ . }}</button>
+                    {{- else }}
+                    <button class="pagination-btn" data-page="{{ . }}">{{ . }}</button>
+                    {{- end }}
+                    {{- end }}
+                    {{- end }}
+
+                    <!-- 下一页 -->
+                    <button class="pagination-btn" data-page="{{if lt .Page 1}}1{{else if ge .Page .TotalPages}}{{.TotalPages}}{{else}}{{add .Page 1}}{{end}}">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="16" height="16">
+                            <path fill="#666666" d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/>
+                        </svg>
+                    </button>
+
+                    <!-- 末页 -->
+                    <button class="pagination-btn last-page" data-page="{{.TotalPages}}">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="16" height="16">
+                            <path fill="#666666" d="M470.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L402.7 256 265.4 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l160-160zm-352 160l160-160c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L210.7 256 73.4 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0z"/>
+                        </svg>
+                    </button>
+
+                    <!-- 跳转 -->
+                    <div class="pagination-jumper">
+                        <span>Page</span>
+                        <input type="number" id="custom_page_top" min="1" max="100">
+                        <button class="pagination-btn">Go</button>
+                    </div>
+                </div>
+                {{- end}}
 				<div class='listing{{if eq .Layout "grid"}} grid{{end}}'>
 				{{- if eq .Layout "grid"}}
 				{{- range .Items}}
@@ -868,7 +1029,7 @@ footer {
 								</svg>
 							</a>
 							{{- end}}
-							
+
 							{{- if and (eq .Sort "name") (ne .Order "desc")}}
 							<a href="?sort=name&order=desc{{if ne 0 .Limit}}&limit={{.Limit}}{{end}}{{if ne 0 .Offset}}&offset={{.Offset}}{{end}}">
 								Name
@@ -1006,6 +1167,65 @@ footer {
 				</table>
 				{{- end}}
 			</div>
+            {{- if .PaginationEnabled}}
+            <div class="pagination">
+                <div class="pagination-perPage">
+                    <span>Items per page:</span>
+                    <select class="page-size-select">
+                        <option value="10" {{if eq .ItemsPerPage 10}}selected{{end}}>10</option>
+                        <option value="20" {{if eq .ItemsPerPage 20}}selected{{end}}>20</option>
+                        <option value="50" {{if eq .ItemsPerPage 50}}selected{{end}}>50</option>
+                        <option value="100" {{if eq .ItemsPerPage 100}}selected{{end}}>100</option>
+                    </select>
+                </div>
+                <!-- 首页 -->
+                <button class="pagination-btn" data-page="1">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="16" height="16">
+                        <path fill="#666666" d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160zm352-160l-160 160c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L301.3 256 438.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0z"/>
+                    </svg>
+                </button>
+
+                <!-- 上一页 -->
+                <button class="pagination-btn" data-page="{{if le .Page 1}}1{{else if gt .Page .TotalPages}}{{.TotalPages}}{{else}}{{sub .Page 1}}{{end}}">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="16" height="16">
+                        <path fill="#666666" d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/>
+                    </svg>
+                </button>
+
+                {{- range .DisplayPageList }}
+                {{- if eq . -1 }}
+                <span class="pagination-ellipsis">...</span>
+                {{- else }}
+                {{- if eq . $.Page }}
+                <button class="pagination-btn active" data-page="{{ . }}">{{ . }}</button>
+                {{- else }}
+                <button class="pagination-btn" data-page="{{ . }}">{{ . }}</button>
+                {{- end }}
+                {{- end }}
+                {{- end }}
+
+                <!-- 下一页 -->
+                <button class="pagination-btn" data-page="{{if lt .Page 1}}1{{else if ge .Page .TotalPages}}{{.TotalPages}}{{else}}{{add .Page 1}}{{end}}">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="16" height="16">
+                        <path fill="#666666" d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/>
+                    </svg>
+                </button>
+
+                <!-- 末页 -->
+                <button class="pagination-btn last-page" data-page="{{.TotalPages}}">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="16" height="16">
+                        <path fill="#666666" d="M470.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L402.7 256 265.4 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l160-160zm-352 160l160-160c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L210.7 256 73.4 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0z"/>
+                    </svg>
+                </button>
+
+                <!-- 跳转 -->
+                <div class="pagination-jumper">
+                    <span>Page</span>
+                    <input type="number" id="custom_page_foot" min="1" max="100">
+                    <button class="pagination-btn">Go</button>
+                </div>
+            </div>
+            {{- end}}
 			</main>
 		</div>
 		<footer>
@@ -1176,5 +1396,74 @@ footer {
 			var timeList = Array.prototype.slice.call(document.getElementsByTagName("time"));
 			timeList.forEach(localizeDatetime);
 		</script>
+        {{- if .PaginationEnabled }}
+        <script {{ $nonceAttribute }}>
+            const paginationBtns = document.querySelectorAll('.pagination-btn');
+
+            paginationBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    jumpToPage(btn.dataset.page);
+                });
+            });
+
+            document.querySelectorAll(".page-size-select").forEach((selector)=>{
+                selector.addEventListener("change", function() {
+                    // 获取当前选项的值（新的每页项目数）
+                    const newPageSize = parseInt(this.value, 10);
+
+                    // 获取当前 URL 并解析参数
+                    const url = new URL(window.location.href);
+                    const currentPageSize = parseInt(url.searchParams.get("page_size")) || 20; // 默认每页10项
+                    const currentPage = parseInt(url.searchParams.get("page")) || 1; // 默认第一页
+
+                    // 计算新的页数
+                    const firstItemIndex = (currentPage - 1) * currentPageSize; // 当前页的第一个项目的索引
+                    const newPage = Math.floor(firstItemIndex / newPageSize) + 1; // 新的页数，确保项目在当前页
+
+                    // 更新 URL 参数
+                    url.searchParams.set("page_size", newPageSize);
+                    url.searchParams.set("page", newPage);
+
+                    // 跳转到新的 URL
+                    window.location.href = url.toString();
+                });
+            });
+
+            function jumpToPage(page) {
+                if (page) {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('page', page);
+                    window.location.href = url.toString();
+                }
+            }
+
+            document.addEventListener("keydown", function(event) {
+                if (event.key === "ArrowRight") {
+                    event.preventDefault();
+                    let lastPage = document.querySelector('.pagination-btn.last-page').dataset.page;
+                    let jumpTo = parseInt(document.querySelector('.pagination-btn.active').dataset.page) + 1;
+                    jumpToPage(jumpTo<=lastPage?jumpTo>0?jumpTo:1:lastPage);
+                }else if (event.key === "ArrowLeft") {
+                    event.preventDefault();
+                    let lastPage = document.querySelector('.pagination-btn.last-page').dataset.page;
+                    let jumpTo = parseInt(document.querySelector('.pagination-btn.active').dataset.page) - 1;
+                    jumpToPage(jumpTo<=lastPage?jumpTo>0?jumpTo:1:lastPage);
+                }
+            });
+
+            const jumperInput = document.querySelectorAll('.pagination-jumper input');
+            const jumperBtn = document.querySelectorAll('.pagination-jumper button');
+            jumperBtn.forEach((jumperBtn, index)=>{
+                jumperBtn.addEventListener('click', () => {
+                    const page = jumperInput[index].value;
+                    if (page) {
+                        const url = new URL(window.location.href);
+                        url.searchParams.set('page', page);
+                        window.location.href = url.toString();
+                    }
+                });
+            });
+        </script>
+        {{- end }}
 	</body>
 </html>

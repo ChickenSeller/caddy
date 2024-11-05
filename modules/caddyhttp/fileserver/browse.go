@@ -26,6 +26,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"sync"
 	"text/tabwriter"
@@ -206,7 +207,7 @@ func (fsrv *FileServer) serveBrowse(fileSystem fs.FS, root, dirPath string, w ht
 }
 
 func (fsrv *FileServer) loadDirectoryContents(ctx context.Context, fileSystem fs.FS, dir fs.ReadDirFile, root, urlPath string, repl *caddy.Replacer) (*browseTemplateContext, error) {
-	files, err := dir.ReadDir(10000) // TODO: this limit should probably be configurable
+	files, err := dir.ReadDir(0) // TODO: this limit should probably be configurable
 	if err != nil && err != io.EOF {
 		return nil, err
 	}
@@ -241,6 +242,11 @@ func (fsrv *FileServer) browseApplyQueryParams(w http.ResponseWriter, r *http.Re
 	limitParam := r.URL.Query().Get("limit")
 	offsetParam := r.URL.Query().Get("offset")
 	sortParamTmp := r.URL.Query().Get("sort")
+
+	pagination := r.URL.Query().Get("pagination")
+	itemsPerPageParam := r.URL.Query().Get("page_size")
+	pageParam := r.URL.Query().Get("page")
+
 	if sortParamTmp != "" {
 		sortParam = sortParamTmp
 	}
@@ -278,6 +284,19 @@ func (fsrv *FileServer) browseApplyQueryParams(w http.ResponseWriter, r *http.Re
 		http.SetCookie(w, &http.Cookie{Name: "order", Value: orderParam, Secure: r.TLS != nil})
 	}
 
+	if pagination == "true" {
+		// If pagination is enabled, we need to calculate the offset and limit
+		if itemsPerPageParam == "" || itemsPerPageParam == "0" {
+			itemsPerPageParam = "20"
+		}
+		if pageParam == "" || pageParam == "0" {
+			pageParam = "1"
+		}
+		listing.applyPagination(itemsPerPageParam, pageParam)
+		limitParam = itemsPerPageParam
+		offsetParam = strconv.Itoa(listing.ItemsPerPage * (listing.Page - 1))
+	}
+
 	// finally, apply the sorting and limiting
 	listing.applySortAndLimit(sortParam, orderParam, limitParam, offsetParam)
 }
@@ -288,13 +307,50 @@ func (fsrv *FileServer) makeBrowseTemplate(tplCtx *templateContext) (*template.T
 	var err error
 
 	if fsrv.Browse.TemplateFile != "" {
-		tpl = tplCtx.NewTemplate(path.Base(fsrv.Browse.TemplateFile))
+		tpl = tplCtx.NewTemplate(path.Base(fsrv.Browse.TemplateFile)).
+			Funcs(template.FuncMap{
+				"iterate": func(start, end int) []int {
+					var items []int
+					for i := start; i <= end; i++ {
+						items = append(items, i)
+					}
+					return items
+				},
+				"sub": func(a, b int) int {
+					return a - b
+				},
+			})
 		tpl, err = tpl.ParseFiles(fsrv.Browse.TemplateFile)
 		if err != nil {
 			return nil, fmt.Errorf("parsing browse template file: %v", err)
 		}
 	} else {
-		tpl = tplCtx.NewTemplate("default_listing")
+		tpl = tplCtx.NewTemplate("default_listing").
+			Funcs(template.FuncMap{
+				"iterate": func(start, end int) []int {
+					var items []int
+					for i := start; i <= end; i++ {
+						items = append(items, i)
+					}
+					return items
+				},
+				"sub": func(a, b int) int {
+					return a - b
+				}, "add": func(a, b int) int {
+					return a + b
+				}, "max": func(a, b int) int {
+					if a > b {
+						return a
+					}
+					return b
+				},
+				"min": func(a, b int) int {
+					if a < b {
+						return a
+					}
+					return b
+				},
+			})
 		tpl, err = tpl.Parse(BrowseTemplate)
 		if err != nil {
 			return nil, fmt.Errorf("parsing default browse template: %v", err)
